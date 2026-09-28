@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Message Excerpt V3</title>
+<style>
+:root{--bg:#f5f5f7;--line:#dddde2;--left:#e9e9eb;--right:#0a84ff;--bs:15px}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;color:#17171a}
+button,input,select{font:inherit} button{cursor:pointer}
+.app{max-width:1280px;margin:auto;padding:26px 18px 60px}
+.head{display:flex;justify-content:space-between;gap:12px;align-items:end;margin-bottom:18px;flex-wrap:wrap}
+h1{margin:0;font-size:25px}.sub,.help{font-size:12px;color:#85858d}.actions,.toolbar,.tabs{display:flex;gap:7px;flex-wrap:wrap}
+.layout{display:grid;grid-template-columns:410px 1fr;gap:22px;align-items:start}
+.preview{position:sticky;top:16px}.phone{background:#fff;border:1px solid #d7d7dc;border-radius:28px;overflow:hidden;box-shadow:0 12px 38px #00000012}
+.nav{height:55px;border-bottom:1px solid #eee;display:grid;grid-template-columns:45px 1fr 45px;align-items:center;padding:0 10px}
+.back{font-size:30px;color:#0a84ff}.name{text-align:center;font-size:13px;font-weight:650}
+
+.messages{min-height:550px;padding:17px 12px 24px;display:flex;flex-direction:column;gap:6px}
+.row{display:flex}.left{justify-content:flex-start}.right{justify-content:flex-end}
+.bubble{max-width:80%;padding:8px 12px;border-radius:18px;font-size:var(--bs);line-height:1.42;white-space:pre-wrap;overflow-wrap:anywhere}
+.left .bubble{background:var(--left);color:#111;border-bottom-left-radius:5px}.right .bubble{background:var(--right);color:#fff;border-bottom-right-radius:5px}
+.nar{padding:10px 7px;margin:3px 0;font-size:14px;line-height:1.7;white-space:pre-wrap;overflow-wrap:anywhere}
+.composer{height:48px;border-top:1px solid #eee;display:flex;gap:7px;align-items:center;padding:8px 10px}
+.plus,.send{width:29px;height:29px;border-radius:50%;display:grid;place-items:center}.plus{background:#e9e9ed;color:#666;font-size:20px}.send{background:var(--right);color:#fff}
+.fake{flex:1;border:1px solid #d5d5da;border-radius:18px;padding:6px 11px;color:#aaa;font-size:13px}
+.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:17px;margin-bottom:12px}.card h2{font-size:15px;margin:0 0 12px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.full{grid-column:1/-1}label{display:block;color:#707078;font-size:12px;margin-bottom:5px}
+input[type=text],input[type=number],select{width:100%;border:1px solid #d6d6dc;border-radius:10px;padding:9px 10px;background:#fff}
+.colors{display:flex;align-items:center;gap:8px}.colors input{width:44px;height:38px;border:0}
+.btn,.tool,.tab{border:1px solid #d6d6db;background:#fff;border-radius:9px;padding:8px 11px;font-weight:650}.btn.dark,.tab.on{background:#17171a;color:#fff}.btn.blue{background:#0a84ff;color:#fff;border-color:#0a84ff}.btn.red{color:#d70015}
+.editor{min-height:290px;border:1px solid #d6d6dc;border-radius:12px;padding:14px;line-height:1.8;white-space:pre-wrap;outline:none;background:#fff;overflow-wrap:anywhere}
+.editor:empty:before{content:"AI 채팅 원문을 여기에 붙여넣어. 기본은 지문이고, 대사만 드래그해서 좌/우 말풍선을 지정해.";color:#aaa}
+.speaker-left{background:rgba(142,142,147,.17);border-radius:4px;box-shadow:inset 0 -2px 0 #8e8e93}
+.speaker-right{background:rgba(10,132,255,.13);border-radius:4px;box-shadow:inset 0 -2px 0 #0a84ff}
+.msgbreak{display:inline-block;width:0;height:1.1em;border-left:2px solid #ff9500;margin:0 5px;vertical-align:middle}.pagebreak{display:block;margin:10px 0;border:0;border-top:1px dashed #aaa;position:relative;height:18px}
+.pagebreak:after{content:"PAGE BREAK";position:absolute;left:50%;top:-9px;transform:translateX(-50%);background:#fff;padding:0 8px;color:#888;font-size:10px}
+.sep{width:1px;background:#ddd;margin:0 2px}.toolbar{align-items:center;margin-bottom:9px}.tool{padding:7px 9px}
+.toolbar input[type=color]{width:38px;height:34px;border:0;background:transparent}.toolbar input[type=range]{width:110px}.toolbar select{width:auto;padding:7px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin:8px 0 0;font-size:11px;color:#777}.dot{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px}.dl{background:#8e8e932b;border-bottom:2px solid #8e8e93}.dr{background:#0a84ff21;border-bottom:2px solid #0a84ff}
+.tabs{margin-bottom:8px}.help{line-height:1.55;margin-top:8px}
+@media(max-width:850px){.layout{grid-template-columns:1fr}.preview{position:static}.grid{grid-template-columns:1fr}.full{grid-column:auto}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="head">
+    <div><h1>Message Excerpt V3</h1><div class="sub">원문 하나로 대사 · 지문 · 화자 · 서식 · 페이지를 편집</div></div>
+    <div class="actions"><button class="btn" id="reset">초기화</button><button class="btn blue" id="png">현재 페이지 PNG</button><button class="btn dark" id="pngAll">전체 페이지 PNG</button></div>
+  </div>
+
+  <div class="layout">
+    <aside class="preview">
+      <div class="tabs" id="tabs"></div>
+      <div class="phone" id="capture">
+        <div class="nav"><div class="back">‹</div><div class="name"><span id="nameView">강무혁</span></div><div></div></div>
+        <div class="messages" id="messages"></div>
+        <div class="composer"><div class="plus">＋</div><div class="fake">iMessage</div><div class="send">↑</div></div>
+      </div>
+    </aside>
+
+    <main>
+      <section class="card">
+        <h2>화면 설정</h2>
+        <div class="grid">
+          <div><label>상대 이름</label><input id="name" type="text" value="강무혁"></div>
+          <div><label>말풍선 글씨 크기 (10–32px)</label><input id="bsize" type="number" min="10" max="32" value="15"></div>
+          <div><label>상대 말풍선 색</label><div class="colors"><input id="lc" type="color" value="#e9e9eb"><span id="lhex">#E9E9EB</span></div></div>
+          <div><label>내 말풍선 색</label><div class="colors"><input id="rc" type="color" value="#0a84ff"><span id="rhex">#0A84FF</span></div></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>원문 편집기</h2>
+        <div class="toolbar">
+          <button class="tool" id="leftMark">← 상대 말풍선</button>
+          <button class="tool" id="rightMark">내 말풍선 →</button>
+          <button class="tool" id="msgBreak">말풍선 나누기</button>
+          <span class="sep">&nbsp;</span>
+          <button class="tool" id="bold"><b>B</b></button>
+          <button class="tool" id="italic"><i>I</i></button><input id="tc" type="color" value="#17171a" title="글씨 색"><button class="tool" id="textColor">글씨색</button>
+          <select id="fs"><option value="">글씨 크기</option><option>8</option><option>9</option><option>10</option><option>11</option><option>12</option><option>13</option><option>14</option><option>16</option><option>18</option><option>20</option><option>24</option><option>28</option></select>
+          <button class="tool" id="sizeApply">적용</button>
+          <select id="ls" title="자간"><option value="">자간</option><option value="-1">-1px</option><option value="-0.5">-0.5px</option><option value="0">0px</option><option value="0.5">0.5px</option><option value="1">1px</option><option value="1.5">1.5px</option><option value="2">2px</option><option value="3">3px</option></select>
+          <button class="tool" id="letterApply">자간 적용</button>
+          <select id="lh" title="줄간격"><option value="">줄간격</option><option value="1.1">1.1</option><option value="1.2">1.2</option><option value="1.3">1.3</option><option value="1.4">1.4</option><option value="1.5">1.5</option><option value="1.6">1.6</option><option value="1.8">1.8</option><option value="2">2.0</option><option value="2.2">2.2</option></select>
+          <button class="tool" id="lineApply">줄간격 적용</button>
+          <span class="sep">&nbsp;</span>
+          <input id="hc" type="color" value="#fff176" title="형광펜 색">
+          <input id="ho" type="range" min="0" max="100" value="45" title="형광펜 투명도">
+          <span id="hop">45%</span>
+          <button class="tool" id="paint">칠하기</button>
+          <button class="tool" id="erase">형광펜 지우기</button>
+          <span class="sep">&nbsp;</span>
+          <button class="tool" id="break">페이지 나누기</button>
+        </div>
+        <div id="editor" class="editor" contenteditable="true" spellcheck="false"></div>
+        <div class="legend"><span><i class="dot dl"></i>상대 대사 지정</span><span><i class="dot dr"></i>내 대사 지정</span><span>*별표 안 = 지문 / 별표 밖 = 대사</span></div>
+        <div class="actions" style="margin-top:12px"><button class="btn dark" id="convert">미리보기 변환</button></div>
+        <div class="help">AI 채팅을 그대로 붙여넣으면 원본 사이트의 검은 배경·글씨색 같은 서식은 자동으로 제거되고, 지정하지 않은 부분은 기본적으로 지문(줄글)으로 들어가. 대사 부분만 드래그해 상대/내 말풍선을 지정해. *별표 안은 항상 지문으로 처리돼. 자간은 글자 사이 간격, 줄간격은 같은 지문 안의 다음 줄과의 거리를 조절해. 대사를 두 개의 연속 말풍선으로 만들고 싶으면 둘 사이에 커서를 두고 ‘말풍선 나누기’를 눌러.</div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<script>
+const $=s=>document.querySelector(s), root=document.documentElement, E=$('#editor');
+let pages=[[]], current=0, savedRange=null;
+
+function esc(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function sanitize(h){
+  const t=document.createElement('template'); t.innerHTML=h;
+  t.content.querySelectorAll('script,style,iframe,object').forEach(x=>x.remove());
+  t.content.querySelectorAll('*').forEach(e=>{
+    [...e.attributes].forEach(a=>{
+      if(a.name==='class' && ['speaker-left','speaker-right','pagebreak'].some(c=>e.classList.contains(c))) return;
+      if(a.name==='style'){
+        let ok=[];
+        for(const p of e.style) if(['font-weight','font-style','font-size','background-color','color','letter-spacing','line-height'].includes(p)) ok.push(p+':'+e.style.getPropertyValue(p));
+        ok.length?e.setAttribute('style',ok.join(';')):e.removeAttribute('style');
+      } else if(a.name!=='class') e.removeAttribute(a.name);
+    });
+  });
+  return t.innerHTML;
+}
+function textOf(h){const d=document.createElement('div');d.innerHTML=h;return d.textContent||''}
+function settings(){
+  root.style.setProperty('--bs',Math.max(10,Math.min(32,+$('#bsize').value||15))+'px');
+  root.style.setProperty('--left',$('#lc').value); root.style.setProperty('--right',$('#rc').value);
+  $('#nameView').textContent=$('#name').value.trim()||'상대';
+  $('#lhex').textContent=$('#lc').value.toUpperCase(); $('#rhex').textContent=$('#rc').value.toUpperCase();
+}
+['name','bsize','lc','rc'].forEach(id=>$('#'+id).addEventListener('input',settings));
+
+function saveSelection(){
+  const s=getSelection();
+  if(s.rangeCount && E.contains(s.anchorNode) && E.contains(s.focusNode)) savedRange=s.getRangeAt(0).cloneRange();
+}
+E.addEventListener('mouseup',saveSelection); E.addEventListener('keyup',saveSelection);
+
+E.addEventListener('paste',e=>{
+  e.preventDefault();
+  const text=(e.clipboardData||window.clipboardData).getData('text/plain');
+  const sel=getSelection();
+  if(!sel.rangeCount)return;
+  const r=sel.getRangeAt(0);
+  r.deleteContents();
+
+  // 줄바꿈을 보존한 순수 텍스트로 삽입
+  const frag=document.createDocumentFragment();
+  const parts=text.replace(/\r\n?/g,'\n').split('\n');
+  parts.forEach((part,i)=>{
+    if(i)frag.appendChild(document.createElement('br'));
+    frag.appendChild(document.createTextNode(part));
+  });
+
+  const last=frag.lastChild;
+  r.insertNode(frag);
+  if(last){
+    r.setStartAfter(last);
+    r.collapse(true);
+    sel.removeAllRanges();
+    sel.addRange(r);
+    savedRange=r.cloneRange();
+  }
+});
+
+
+function useRange(){
+  if(!savedRange || savedRange.collapsed) return null;
+  if(!E.contains(savedRange.commonAncestorContainer)) return null;
+  E.focus({preventScroll:true});
+  const s=getSelection(); s.removeAllRanges(); s.addRange(savedRange); return s.getRangeAt(0);
+}
+function wrapSelection(className,styles){
+  const r=useRange(); if(!r) return;
+  const sp=document.createElement('span'); if(className) sp.className=className; if(styles) Object.assign(sp.style,styles);
+  const fragment=r.extractContents();
+  // Remove only the properties being replaced inside the selected fragment.
+  // Otherwise an older inner span overrides the new outer span.
+  if(styles) fragment.querySelectorAll('[style]').forEach(node=>{
+    Object.keys(styles).forEach(key=>node.style[key]='');
+  });
+  sp.appendChild(fragment);r.insertNode(sp);
+  r.selectNodeContents(sp);
+  const selection=getSelection();selection.removeAllRanges();selection.addRange(r);
+  savedRange=r.cloneRange();
+  parse();
+}
+document.querySelectorAll('.tool').forEach(b=>b.addEventListener('mousedown',e=>e.preventDefault()));
+$('#leftMark').onclick=()=>wrapSelection('speaker-left');
+$('#rightMark').onclick=()=>wrapSelection('speaker-right');
+$('#bold').onclick=()=>wrapSelection('',{fontWeight:'700'});
+$('#italic').onclick=()=>wrapSelection('',{fontStyle:'italic'});
+$('#textColor').onclick=()=>wrapSelection('',{color:$('#tc').value});
+$('#sizeApply').onclick=()=>{if($('#fs').value)wrapSelection('',{fontSize:$('#fs').value+'px'})};
+$('#letterApply').onclick=()=>{if($('#ls').value!=='')wrapSelection('',{letterSpacing:$('#ls').value+'px'})};
+$('#lineApply').onclick=()=>{if($('#lh').value!=='')wrapSelection('',{lineHeight:$('#lh').value})};
+$('#ho').oninput=()=>$('#hop').textContent=$('#ho').value+'%';
+$('#paint').onclick=()=>{
+  const h=$('#hc').value,o=+$('#ho').value/100;
+  const r=parseInt(h.slice(1,3),16),g=parseInt(h.slice(3,5),16),b=parseInt(h.slice(5,7),16);
+  wrapSelection('',{backgroundColor:`rgba(${r}, ${g}, ${b}, ${o})`});
+};
+$('#erase').onclick=()=>wrapSelection('',{backgroundColor:'transparent'});
+
+$('#msgBreak').onclick=()=>{
+  let r=null;
+  const sel=getSelection();
+  if(sel.rangeCount && E.contains(sel.anchorNode)){r=sel.getRangeAt(0).cloneRange();}
+  else if(savedRange){r=savedRange.cloneRange();}
+  if(!r){E.focus();r=document.createRange();r.selectNodeContents(E);r.collapse(false)}
+  r.deleteContents();
+  const mb=document.createElement('span');mb.className='msgbreak';mb.contentEditable='false';mb.innerHTML='&nbsp;';
+  r.insertNode(mb);r.setStartAfter(mb);r.collapse(true);
+  const ss=getSelection();ss.removeAllRanges();ss.addRange(r);savedRange=r.cloneRange();
+};
+
+$('#break').onclick=()=>{
+  let r=useRange();
+  if(!r){E.focus();r=document.createRange();r.selectNodeContents(E);r.collapse(false)}
+  r.deleteContents();
+  const br=document.createElement('span');br.className='pagebreak';br.contentEditable='false';br.innerHTML='&nbsp;';
+  r.insertNode(br); r.setStartAfter(br);r.collapse(true);
+  const s=getSelection();s.removeAllRanges();s.addRange(r);savedRange=r.cloneRange();
+};
+
+function serializeEditor(){
+  const clone=E.cloneNode(true);
+  clone.querySelectorAll('.pagebreak').forEach(x=>x.replaceWith(document.createTextNode('\n\uE000PAGEBREAK\uE000\n')));
+  clone.querySelectorAll('.msgbreak').forEach(x=>x.replaceWith(document.createTextNode('\uE000MSGBREAK\uE000')));
+  clone.querySelectorAll('div').forEach(d=>{d.insertAdjacentText('beforebegin','\n');d.insertAdjacentText('afterend','\n')});
+  clone.querySelectorAll('br').forEach(b=>b.replaceWith(document.createTextNode('\n')));
+  return clone;
+}
+function parse(){
+  const clone=serializeEditor();
+  const atoms=[];
+
+  function walk(node,ctx={side:null,styles:[]}){
+    if(node.nodeType===3){
+      if(node.nodeValue)atoms.push({text:node.nodeValue,side:ctx.side,styles:[...ctx.styles]});
+      return;
+    }
+    if(node.nodeType!==1)return;
+
+    let side=ctx.side;
+    if(node.classList.contains('speaker-left'))side='left';
+    if(node.classList.contains('speaker-right'))side='right';
+
+    let styles=[...ctx.styles];
+    const st=node.style;
+    if(st.fontWeight)styles.push(['font-weight',st.fontWeight]);
+    if(st.fontStyle)styles.push(['font-style',st.fontStyle]);
+    if(st.fontSize)styles.push(['font-size',st.fontSize]);
+    if(st.backgroundColor)styles.push(['background-color',st.backgroundColor]);
+    if(st.color)styles.push(['color',st.color]);
+    if(st.letterSpacing)styles.push(['letter-spacing',st.letterSpacing]);
+    if(st.lineHeight)styles.push(['line-height',st.lineHeight]);
+
+    node.childNodes.forEach(c=>walk(c,{side,styles}));
+  }
+
+  clone.childNodes.forEach(c=>walk(c));
+
+  pages=[[]];
+  let pi=0, inStarNarr=false, buf=[], bufType=null, bufSide=null;
+
+  function styleText(a){
+    let h=esc(a.text);
+    if(a.styles.length){
+      const css=a.styles.map(x=>x[0]+':'+x[1]).join(';');
+      h='<span style="'+css+'">'+h+'</span>';
+    }
+    return h;
+  }
+
+  function flush(){
+    if(!buf.length)return;
+    const raw=buf.map(x=>x.text).join('');
+
+    if(raw.trim()){
+      if(bufType==='d'){
+        // Trim the message edges without dropping styles on individual text runs.
+        const runs=buf.map(a=>({...a}));
+        while(runs.length && !runs[0].text.trim())runs.shift();
+        while(runs.length && !runs[runs.length-1].text.trim())runs.pop();
+        runs[0].text=runs[0].text.trimStart();
+        runs[runs.length-1].text=runs[runs.length-1].text.trimEnd();
+        pages[pi].push({type:'d',side:bufSide||'left',html:runs.map(styleText).join('')});
+      }else{
+        const html=buf.map(styleText).join('').trim().replace(/\n/g,'<br>');
+        if(html)pages[pi].push({type:'n',html});
+      }
+    }
+
+    buf=[];
+    bufType=null;
+    bufSide=null;
+  }
+
+  function pushPiece(text,a){
+    if(!text)return;
+
+    // 별표 안은 항상 지문.
+    // 별표 밖에서도 화자를 직접 지정하지 않은 텍스트는 기본 지문.
+    const type = (!inStarNarr && a.side) ? 'd' : 'n';
+    const side = type==='d' ? a.side : null;
+
+    if(buf.length && (bufType!==type || (type==='d' && bufSide!==side))) flush();
+
+    if(!buf.length){
+      bufType=type;
+      bufSide=side;
+    }
+
+    buf.push({text,styles:a.styles});
+  }
+
+  for(const a of atoms){
+    let str=a.text, pos=0;
+    const pageToken='\uE000PAGEBREAK\uE000';
+    const msgToken='\uE000MSGBREAK\uE000';
+
+    while(pos<str.length){
+      if(str.startsWith(pageToken,pos)){
+        flush();
+        pages.push([]);
+        pi++;
+        pos+=pageToken.length;
+        continue;
+      }
+
+      if(str.startsWith(msgToken,pos)){
+        flush();
+        pos+=msgToken.length;
+        continue;
+      }
+
+      if(str[pos]==='*'){
+        flush();
+        inStarNarr=!inStarNarr;
+        pos++;
+        continue;
+      }
+
+      let end=pos+1;
+      while(
+        end<str.length &&
+        str[end]!=='*' &&
+        !str.startsWith(pageToken,end) &&
+        !str.startsWith(msgToken,end)
+      ) end++;
+
+      pushPiece(str.slice(pos,end),a);
+      pos=end;
+    }
+  }
+
+  flush();
+  pages=pages.filter((p,i)=>p.length||pages.length===1);
+  current=Math.min(current,pages.length-1);
+  render();
+}
+$('#convert').onclick=parse;
+
+function render(){
+  const tabs=$('#tabs');tabs.innerHTML='';
+  pages.forEach((p,i)=>{const b=document.createElement('button');b.className='tab'+(i===current?' on':'');b.textContent='PAGE '+(i+1);b.onclick=()=>{current=i;render()};tabs.appendChild(b)});
+  const m=$('#messages');m.innerHTML='';
+  (pages[current]||[]).forEach(x=>{
+    if(x.type==='d'){const r=document.createElement('div');r.className='row '+x.side;const b=document.createElement('div');b.className='bubble';b.innerHTML=sanitize(x.html);r.appendChild(b);m.appendChild(r)}
+    else{const n=document.createElement('div');n.className='nar';n.innerHTML=sanitize(x.html);m.appendChild(n)}
+  });
+}
+$('#reset').onclick=()=>{if(confirm('편집 내용과 미리보기를 모두 초기화할까?')){E.innerHTML='';pages=[[]];current=0;render()}};
+
+async function shot(name){
+  const mod=await import('https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/+esm');
+  const target=$('#capture');
+  const oldRadius=target.style.borderRadius;
+  const oldBorder=target.style.border;
+  const oldShadow=target.style.boxShadow;
+  const oldOverflow=target.style.overflow;
+
+  // 둥근 모서리를 유지하고, 모서리 바깥은 투명하게 저장함.
+  target.style.borderRadius='28px';
+  target.style.border='0';
+  target.style.boxShadow='none';
+  target.style.overflow='hidden';
+
+  try{
+    await document.fonts.ready;
+    const u=await mod.toPng(target,{pixelRatio:3});
+    const a=document.createElement('a');a.href=u;a.download=name;a.click();
+  } finally {
+    target.style.borderRadius=oldRadius;
+    target.style.border=oldBorder;
+    target.style.boxShadow=oldShadow;
+    target.style.overflow=oldOverflow;
+  }
+}
+$('#png').onclick=async()=>{try{parse();await shot('message-page-'+(current+1)+'.png')}catch(e){alert('PNG 저장에 실패했어. 인터넷 연결 상태를 확인해 줘.')}};
+$('#pngAll').onclick=async()=>{parse();const old=current;try{for(let i=0;i<pages.length;i++){current=i;render();await new Promise(r=>setTimeout(r,120));await shot('message-page-'+(i+1)+'.png');await new Promise(r=>setTimeout(r,250))}}catch(e){alert('브라우저에서 여러 파일 다운로드를 허용해 줘.')}current=old;render()};
+settings();render();
+</script>
+</body></html>
